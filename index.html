@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nightscratch 个人网站</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', 'Microsoft YaHei', 'PingFang SC', 'Arial', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        a:hover,
+        summary:hover {
+            color: #bd2626;
+        }
+
+        summary {
+            cursor: pointer;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #666;
+        }
+
+        .introduction {
+            margin-top: 2rem;
+        }
+
+        .links {
+            margin-top: 3rem;
+        }
+
+        .links-container {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+        }
+
+        .links-container * {
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .links-container {
+                flex-direction: column;
+            }
+        }
+
+        .links ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .links li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* 可为搜索框添加简单样式 */
+        .collapsible-lists input[type="search"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        hr {
+            border: none;
+            height: 1px;
+            background: #ccc;
+            margin: 1.5rem 0;
+        }
+        /* 脚页的简单样式 */
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.9rem;
+            padding-top: 1rem;
+        }
+
+        .small {
+            font-size: 0.8rem;
+            margin-top: 0px;
+        }
+    </style>
+    <script src="https://giscus.app/client.js" data-repo="Nightre/giscus-test" data-repo-id="R_kgDON3qAUw"
+        data-category="General" data-category-id="DIC_kwDON3qAU84Cm2wm" data-mapping="pathname" data-strict="0"
+        data-reactions-enabled="1" data-emit-metadata="0" data-input-position="bottom" data-theme="light"
+        data-lang="zh-CN" data-loading="lazy" crossorigin="anonymous" async>
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1>Nightscratch</h1>
+        <p>我是宇宙最强！这个网站有一些关于机器学习好玩的东西！</p>
+    </header>
+
+    <main>
+        <section class="introduction">
+            <h2 class="section-title">自我介绍</h2>
+            <p>我是 Nightscratch，我是宇宙最强！我是宇宙最强！我是宇宙最强！我是宇宙最强！我是宇宙最强！我是宇宙最强！我是宇宙最强！我是宇宙最强！
+                这个网站还未完工！！</p>
+        </section>
+        <div class="links-container">
+            <div class="contact">
+                <h2 class="section-title">联系方式</h2>
+                <ul>
+                    <li><a href="https://github.com/Nightre">GitHub@Nightre</a></li>
+                    <li><a href="mailto:nightscratch1145@gmail.com">nightscratch1145@gmail.com </a></li>
+                    <li><a href="https://t.me/nightscratch2">Telegram@nightscratch2</a></li>
+                </ul>
+            </div>
+            <div class="friends">
+                <h2 class="section-title">友情链接</h2>
+                <ul>
+                    <li><a href="https://www.saobby.com/">Saobby 个人网站</a></li>
+                    <li><a href="https://axolotlpower.com/">AxolotlPower 个人网站</a></li>
+                </ul>
+            </div>
+            <div class="friends">
+                <h2 class="section-title">喜欢的东西</h2>
+                <ul>
+                    <li>
+                        <p>机器学习</p>
+                    </li>
+                    <li>
+                        <p>Webgl</p>
+                    </li>
+                    <li>
+                        <p>游戏</p>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        </section>
+
+        <!-- 新增的折叠列表及搜索过滤开始 -->
+        <section class="collapsible-lists">
+            <h2 class="section-title" style="margin-bottom: 0px;">我搞的好玩的</h2>
+            <p class="small">所有模型均在浏览器运行！所以你还可以用你自己的数据继续训练它！</p>
+            <!-- 搜索输入框 -->
+            <input type="search" id="searchInput" placeholder="搜索...">
+            <details>
+                <summary>文字续写王</summary>
+                <div>
+                    <iframe src="./mxy.html" frameborder="0"></iframe>
+                </div>
+            </details>
+            <details>
+                <summary>待定2</summary>
+                <div>
+                    
+                </div>
+            </details>
+            <details>
+                <summary>待定3</summary>
+                <div>
+    
+                </div>
+            </details>
+        </section>
+        <!-- 新增的折叠列表结束 -->
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function () {
+                var filter = searchInput.value.toLowerCase();
+                var detailsList = document.querySelectorAll('.collapsible-lists details');
+
+                detailsList.forEach(function (detail) {
+                    var summaryText = detail.querySelector('summary').textContent.toLowerCase();
+                    var isMatch = summaryText.indexOf(filter) !== -1;
+                    detail.style.display = isMatch ? '' : 'none';
+                });
+            });
+        });
+    </script>
+    <hr>
+    <h2 class="section-title">评论区</h2>
+    <div class="giscus"></div>
+    <!-- 新增脚页 -->
+    <footer>
+        <p>我是宇宙最强的</p>
+    </footer>
+</body>
+
+</html>
