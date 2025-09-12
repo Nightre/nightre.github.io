@@ -3,9 +3,15 @@
 徒儿！我刚刚在网上看了一些 Scratch 的教程，发现大多是面向小朋友的，讲解贼慢，不太适合你。
 所以我打算亲自写一份快速入门的教程，让你能够更高效地掌握 Scratch！这个教程是快速讲完Scratch所有的东西。不包含实践内容！
 
+---
+
+# 目录
+
+TODO
+
 ## 用户界面介绍
 
-打开<https://turbowarp.org/>
+打开<https://turbowarp.org/editor> 或者 ccw的 Gandi 
 
 打开后你会看到主要由以下几个部分组成：
 
