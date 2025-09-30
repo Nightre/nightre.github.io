@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>一封给你的信</title>
+  <script type="module" crossorigin src="/assets/index-ptnLRes5.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-VKRNykIx.css">
+</head>
+
+<body>
+  <canvas id="game" ref="canvas" width="500" height="500"></canvas>
+
+  <div class="ui">
+    <div id="win-message">过关</div>
+    <div class="side-bar">
+      <progress style="width: 100%;" id="overlap" max="100" value="0"></progress>
+
+      <p>
+        玩法：鼠标拖动信封边缘来折叠这封信，让红色区域被盖住，其余部分不盖住。
+        <br><br>
+        操作：空格翻面，Z撤销，R重置。
+      </p>
+      <hr>
+
+      <div id="level-select-container">
+        <h3 style="margin: 0.5rem 0px;">关卡：</h3>
+        <div id="level-select"></div>
+      </div>
+
+      <div id="win-screen" class="hidden">
+        <hr>
+        <div class="win-box">
+          <h2>成功！</h2>
+          <button id="next-level-btn">下一关</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>
