@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中秋月饼大冒险</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #000428, #004e92);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* 背景星星 */
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* 流星 */
+        .meteor {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            box-shadow: 0 0 10px white;
+            animation: shoot 3s linear infinite;
+        }
+
+        @keyframes shoot {
+            0% {
+                transform: translateX(100vw) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(-100px) translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        /* 月亮 */
+        .moon {
+            position: absolute;
+            top: 10%;
+            right: 10%;
+            width: 100px;
+            height: 100px;
+            background: #ffeb3b;
+            border-radius: 50%;
+            box-shadow: 0 0 20px #ffeb3b;
+            opacity: 0.8;
+        }
+
+        /* 外星人 */
+        .alien {
+            position: absolute;
+            font-size: 50px;
+            animation: fly 10s linear infinite;
+        }
+
+        @keyframes fly {
+            0% { left: -60px; top: 20%; }
+            25% { left: 20%; top: 10%; }
+            50% { left: 50%; top: 30%; }
+            75% { left: 80%; top: 15%; }
+            100% { left: 100vw; top: 25%; }
+        }
+
+        /* 剧情阶段 */
+        #story {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .story-line {
+            opacity: 0;
+            transition: opacity 1s ease-in;
+            font-size: 24px;
+            margin: 20px 0;
+        }
+
+        .story-line.show {
+            opacity: 1;
+        }
+
+        #start-game {
+            opacity: 0;
+            transition: opacity 1s ease-in;
+            font-size: 28px;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+
+        #start-game.show {
+            opacity: 1;
+        }
+
+        /* 游戏阶段 */
+        #game {
+            display: none;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #click-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            text-align: center;
+            z-index: 5;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 月饼 */
+        .moon-cake {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #d4a574, #8b4513);
+            border-radius: 50%;
+            cursor: pointer;
+            animation: float 4s ease-in-out infinite;
+            z-index: 3;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* 信件弹出 */
+        #letter-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #ffeb3b;
+            border-radius: 10px;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        #close-letter {
+            margin-top: 20px;
+            background: #ffeb3b;
+            color: black;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景元素 -->
+    <div class="moon"></div>
+    <div class="alien">👽</div>
+
+    <!-- 剧情阶段 -->
+    <div id="story">
+        <div class="story-line" id="line1"></div>
+        <div class="story-line" id="line2"></div>
+        <div class="story-line" id="line3"></div>
+        <div class="story-line" id="line4"></div>
+        <div class="story-line" id="line5"></div>
+        <div id="start-game">点击开始游戏</div>
+    </div>
+
+    <!-- 游戏阶段 -->
+    <div id="game">
+        <div id="click-prompt">请点击屏幕开始冒险！</div>
+        <div id="letter-modal">
+            <div id="letter-content"></div>
+            <button id="close-letter">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        // 故事内容
+        const storyLines = [
+            "在遥远的月球上，住着一个好奇的外星人。",
+            "它看到地球上的人们在中秋节欢聚，吃着美味的月饼。",
+            "外星人馋坏了，偷偷飞到地球，偷了很多月饼。",
+            "可返程时，飞船坏了！月饼撒满了夜空。",
+            "现在，这些月饼化作了星星，每一颗都藏着一封神秘的信……"
+        ];
+
+        let currentLine = 0;
+        const storyLinesElements = [
+            document.getElementById('line1'),
+            document.getElementById('line2'),
+            document.getElementById('line3'),
+            document.getElementById('line4'),
+            document.getElementById('line5')
+        ];
+
+        // 显示下一行
+        function showNextLine() {
+            if (currentLine < storyLines.length) {
+                storyLinesElements[currentLine].textContent = storyLines[currentLine];
+                storyLinesElements[currentLine].classList.add('show');
+                currentLine++;
+            }
+            if (currentLine === storyLines.length) {
+                document.getElementById('start-game').classList.add('show');
+            }
+        }
+
+        // 游戏启动标志
+        let gameStarted = false;
+
+        // 点击事件
+        document.addEventListener('click', function(e) {
+            if (document.getElementById('story').style.display !== 'none') {
+                if (currentLine < storyLines.length || !document.getElementById('start-game').classList.contains('show')) {
+                    showNextLine();
+                } else {
+                    // 开始游戏
+                    document.getElementById('story').style.display = 'none';
+                    document.getElementById('game').style.display = 'block';
+                    generateStars();
+                    generateMeteors();
+                    setTimeout(() => {
+                        document.getElementById('click-prompt').style.display = 'block';
+                    }, 500);
+                }
+            } else if (!gameStarted && (e.target.id === 'click-prompt' || e.target.id === 'game')) {
+                // 点击屏幕开始游戏，只执行一次
+                gameStarted = true;
+                document.getElementById('click-prompt').style.display = 'none';
+                generateMoonCakes();
+            } else if (e.target.classList.contains('moon-cake')) {
+                // 点击月饼
+                const letterIndex = parseInt(e.target.dataset.letterIndex);
+                e.target.style.display = 'none';
+                showLetter(letterIndex);
+            } else if (e.target.id === 'close-letter') {
+                document.getElementById('letter-modal').style.display = 'none';
+            }
+        });
+
+        // 生成星星
+        function generateStars() {
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(star);
+            }
+        }
+
+        // 生成流星
+        function generateMeteors() {
+            setInterval(() => {
+                const meteor = document.createElement('div');
+                meteor.className = 'meteor';
+                meteor.style.left = Math.random() * 100 + 'vw';
+                meteor.style.top = Math.random() * 50 + '%';
+                meteor.style.animationDelay = Math.random() * 3 + 's';
+                document.body.appendChild(meteor);
+                setTimeout(() => meteor.remove(), 3000);
+            }, 2000);
+        }
+
+        // 信件内容（20封）
+        const letters = [
+            "中秋快乐！愿你的生活如月饼般甜蜜。",
+            "月圆人圆，家家团圆。祝你节日愉快！",
+            "在外星人的眼中，月饼是宇宙中最美味的宝藏。",
+            "偷月饼的外星人说：人类的情谊比月饼更珍贵。",
+            "今晚的月亮特别圆，许个愿吧！",
+            "中秋佳节，思念如潮水。记得回家哦。",
+            "月饼虽圆，友情更圆。谢谢你的陪伴。",
+            "外星人学到了：分享月饼，才能真正快乐。",
+            "嫦娥姐姐的秘密：月饼里藏着无限惊喜。",
+            "祝你中秋安康，事业如月升。",
+            "飞船坏了，但星星见证了我们的冒险。",
+            "一轮明月照我心，千里共婵娟。",
+            "月饼的味道，唤起儿时的回忆。",
+            "在外星球，也要过中秋！",
+            "愿你的烦恼如月饼屑，一扫而空。",
+            "团圆是中秋的主题，珍惜身边人。",
+            "外星人寄语：地球的月饼，甜到心坎。",
+            "赏月、吃饼、寄相思。",
+            "中秋的夜空，藏着无数故事。",
+            "最后一张：谢谢你玩这个游戏！中秋快乐~"
+        ];
+
+        // 生成月饼，每个绑定一个唯一信件索引
+        function generateMoonCakes() {
+            const numCakes = 20;
+            // 随机打乱信件索引，确保一对一
+            const shuffledIndices = [...Array(numCakes).keys()].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < numCakes; i++) {
+                const cake = document.createElement('div');
+                cake.className = 'moon-cake';
+                cake.style.left = Math.random() * 90 + '%';
+                cake.style.top = Math.random() * 80 + 10 + '%';
+                cake.style.animationDelay = Math.random() * 4 + 's';
+                cake.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                cake.dataset.letterIndex = shuffledIndices[i]; // 绑定唯一索引
+                cake.innerHTML = '🥮'; // 使用月饼emoji
+                cake.style.fontSize = '60px';
+                cake.style.lineHeight = '60px';
+                cake.style.textAlign = 'center';
+                document.getElementById('game').appendChild(cake);
+            }
+        }
+
+        // 显示指定信件
+        function showLetter(index) {
+            const letter = letters[index];
+            document.getElementById('letter-content').textContent = letter;
+            document.getElementById('letter-modal').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
