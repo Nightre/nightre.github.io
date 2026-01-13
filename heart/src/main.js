@@ -1,0 +1,164 @@
+import './style.css'
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x020005, 0.001);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 0, 8);
+
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ReinhardToneMapping;
+renderer.toneMappingExposure = 1.6; // 曝光
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+controls.enablePan = false;
+
+// 心形曲线
+class HeartCurve extends THREE.Curve {
+  constructor(scale = 1) {
+    super();
+    this.scale = scale;
+  }
+  getPoint(t, optionalTarget = new THREE.Vector3()) {
+    const point = optionalTarget;
+    const angle = t * Math.PI * 2;
+    const x = 16 * Math.pow(Math.sin(angle), 3);
+    const y = 13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle);
+    return point.set(x * this.scale * 0.2, y * this.scale * 0.2, 0);
+  }
+}
+const heartShapePath = new HeartCurve(1);
+
+// 纹理
+function createSoftParticleTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, 'rgba(255,255,255,1)');
+  gradient.addColorStop(0.15, 'rgba(255,255,255,0.9)');
+  gradient.addColorStop(0.4, 'rgba(255,200,220,0.2)'); // 边缘带一点点淡淡的粉
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(canvas);
+}
+const particleTexture = createSoftParticleTexture();
+
+const pinkLovePalette = [
+  new THREE.Color(0xff66cc),
+  new THREE.Color(0xff99cc),
+  new THREE.Color(0xffccff),
+  new THREE.Color(0xff3399),
+  new THREE.Color(0xffffff),
+  new THREE.Color(0xcc66ff)
+];
+
+// 创建粒子
+function createParticleLayer(count, size, palette, spreadFactor, opacity, brightnessBooster = 1.0) {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const curvePoints = heartShapePath.getSpacedPoints(count);
+
+  for (let i = 0; i < count; i++) {
+    const basePos = curvePoints[i];
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const radius = Math.pow(Math.random(), 1.5) * spreadFactor;
+
+    positions[i * 3] = basePos.x + radius * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = basePos.y + radius * Math.sin(phi) * Math.sin(theta);
+    positions[i * 3 + 2] = basePos.z + radius * Math.cos(phi);
+
+    const color = palette[Math.floor(Math.random() * palette.length)];
+    // 亮度随机变化
+    const variance = 0.8 + Math.random() * 0.4;
+    colors[i * 3] = color.r * variance * brightnessBooster;
+    colors[i * 3 + 1] = color.g * variance * brightnessBooster;
+    colors[i * 3 + 2] = color.b * variance * brightnessBooster;
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: size,
+    map: particleTexture,
+    vertexColors: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: opacity
+  });
+
+  return new THREE.Points(geometry, material);
+}
+
+const heartGroup = new THREE.Group();
+scene.add(heartGroup);
+
+// 1. 基础层
+const mainLayer = createParticleLayer(6000, 0.3, pinkLovePalette, 0.6, 0.85, 1.0);
+heartGroup.add(mainLayer);
+
+// 2. 闪烁层
+const brightPalette = pinkLovePalette.map(c => c.clone().offsetHSL(0, 0, 0.1));
+const sparkleLayer = createParticleLayer(600, 0.75, brightPalette, 0.9, 1.0, 1.5);
+heartGroup.add(sparkleLayer);
+
+// 3. 尘埃层
+const dustLayer = createParticleLayer(2000, 0.15, pinkLovePalette, 2.0, 0.5, 1.0);
+heartGroup.add(dustLayer);
+
+
+// 后期处理
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  0.3,
+  0.2,
+  0.75
+);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
+
+// 动画
+let time = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.008;
+  controls.update();
+
+  heartGroup.rotation.y = Math.sin(time * 0.3) * 0.15;
+  heartGroup.rotation.z = Math.cos(time * 0.2) * 0.05;
+  heartGroup.position.y = Math.sin(time * 0.5) * 0.3;
+
+  // 呼吸
+  sparkleLayer.material.size = 0.75 + Math.sin(time * 3) * 0.15;
+
+  composer.render();
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate();
