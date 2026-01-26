@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💌 2048 情书</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <!-- 开始界面 -->
+    <div id="start-screen">
+        <div class="start-content">
+            <div class="heart-icon">
+                <img width="200" src="./cute.svg" alt="">
+            </div>
+            <h1>2048</h1>
+            <p style="margin: 0;">每个数字都藏着一封给C+1写的信哟</p>
+            <p>操作方法：上下左右滑动屏幕，黄色的数字可以点击</p>
+            <button id="start-btn">开始游戏</button>
+        </div>
+    </div>
+
+    <!-- 游戏界面 -->
+    <div id="game-screen" class="hidden">
+        <div class="game-container">
+            <div class="grid-container">
+                <div class="grid-row">
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                </div>
+                <div class="grid-row">
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                </div>
+                <div class="grid-row">
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                </div>
+                <div class="grid-row">
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                    <div class="grid-cell"></div>
+                </div>
+            </div>
+            <div class="tile-container"></div>
+        </div>
+    </div>
+
+    <!-- 信件模态框 -->
+    <div id="letter-modal" class="modal hidden">
+        <div class="modal-content">
+            <h1 id="letter-title" class="letter-title">5555</h1>
+            <div id="letter-text"></div>
+            <button id="close-letter-btn">知道了</button>
+        </div>
+    </div>
+
+    <!-- 游戏结束模态框 -->
+    <div id="gameover-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="letter-title">游戏结束</div>
+            <p>哎呀，没有空间了...没事，可以复活</p>
+            <button id="revive-btn">复活继续</button>
+        </div>
+    </div>
+
+    <script src="./app.js"></script>
+</body>
+
+</html>

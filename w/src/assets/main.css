@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+html,
+body,
+#app {
+    height: 100%;
+}
+
+body {
+    @apply bg-slate-100;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+@plugin "daisyui" {
+  themes: light --default;
+}
