@@ -259,56 +259,64 @@ async function init() {
         frameNum = 1;
     });
 
-    // Touch support
+    // Touch support for rotation
     let touchState = {
         isDragging: false,
         lastX: 0,
-        lastY: 0,
-        moveForward: false
+        lastY: 0
     };
 
     canvas.addEventListener('touchstart', e => {
-        e.preventDefault();
-        if (e.touches.length === 1) {
-            touchState.isDragging = true;
-            touchState.lastX = e.touches[0].clientX;
-            touchState.lastY = e.touches[0].clientY;
-            touchState.moveForward = false;
-        } else if (e.touches.length >= 2) {
-            touchState.moveForward = true;
-            touchState.isDragging = false;
-        }
-    }, { passive: false });
-
-    canvas.addEventListener('touchmove', e => {
-        e.preventDefault();
-        if (touchState.isDragging && e.touches.length === 1) {
-            let dx = e.touches[0].clientX - touchState.lastX;
-            let dy = e.touches[0].clientY - touchState.lastY;
-            touchState.lastX = e.touches[0].clientX;
-            touchState.lastY = e.touches[0].clientY;
-
-            const sensitivity = 0.005;
-            cameraYaw += dx * sensitivity;
-            cameraPitch -= dy * sensitivity;
-
-            if (cameraPitch > Math.PI / 2 - 0.01) cameraPitch = Math.PI / 2 - 0.01;
-            if (cameraPitch < -Math.PI / 2 + 0.01) cameraPitch = -Math.PI / 2 + 0.01;
-
-            frameNum = 1;
-        }
-    }, { passive: false });
-
-    canvas.addEventListener('touchend', e => {
-        if (e.touches.length === 0) {
-            touchState.isDragging = false;
-            touchState.moveForward = false;
-        } else if (e.touches.length === 1) {
-            touchState.moveForward = false;
+        // Only trigger dragging if we are touching the canvas, not UI
+        if (e.target === canvas && e.touches.length === 1) {
             touchState.isDragging = true;
             touchState.lastX = e.touches[0].clientX;
             touchState.lastY = e.touches[0].clientY;
         }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', e => {
+        if (!touchState.isDragging || e.touches.length !== 1) return;
+        
+        let dx = e.touches[0].clientX - touchState.lastX;
+        let dy = e.touches[0].clientY - touchState.lastY;
+        touchState.lastX = e.touches[0].clientX;
+        touchState.lastY = e.touches[0].clientY;
+
+        const sensitivity = 0.005;
+        cameraYaw += dx * sensitivity;
+        cameraPitch -= dy * sensitivity;
+
+        if (cameraPitch > Math.PI / 2 - 0.01) cameraPitch = Math.PI / 2 - 0.01;
+        if (cameraPitch < -Math.PI / 2 + 0.01) cameraPitch = -Math.PI / 2 + 0.01;
+
+        frameNum = 1;
+    }, { passive: true });
+
+    window.addEventListener('touchend', () => {
+        touchState.isDragging = false;
+    });
+
+    // Mobile UI Buttons integration
+    const uiButtons = document.querySelectorAll('.btn');
+    uiButtons.forEach(btn => {
+        const key = btn.getAttribute('data-key');
+        
+        // Touch events
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            keys[key] = true;
+        }, { passive: false });
+        
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys[key] = false;
+        }, { passive: false });
+
+        // Mouse events (for testing on desktop)
+        btn.addEventListener('mousedown', () => keys[key] = true);
+        btn.addEventListener('mouseup', () => keys[key] = false);
+        btn.addEventListener('mouseleave', () => keys[key] = false);
     });
 
     let lastTime = performance.now();
@@ -347,7 +355,7 @@ async function init() {
         let ulen = Math.sqrt(ux * ux + uy * uy + uz * uz);
         let up = [ux / ulen, uy / ulen, uz / ulen];
 
-        if (keys['KeyW'] || touchState.moveForward) { cameraPos[0] += front[0] * speed; cameraPos[1] += front[1] * speed; cameraPos[2] += front[2] * speed; moved = true; }
+        if (keys['KeyW']) { cameraPos[0] += front[0] * speed; cameraPos[1] += front[1] * speed; cameraPos[2] += front[2] * speed; moved = true; }
         if (keys['KeyS']) { cameraPos[0] -= front[0] * speed; cameraPos[1] -= front[1] * speed; cameraPos[2] -= front[2] * speed; moved = true; }
         if (keys['KeyA']) { cameraPos[0] -= right[0] * speed; cameraPos[1] -= right[1] * speed; cameraPos[2] -= right[2] * speed; moved = true; }
         if (keys['KeyD']) { cameraPos[0] += right[0] * speed; cameraPos[1] += right[1] * speed; cameraPos[2] += right[2] * speed; moved = true; }
