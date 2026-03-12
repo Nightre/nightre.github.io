@@ -146,7 +146,6 @@ fn hit_bvh(ray: Ray, t_min:f32, t_max:f32) -> HitRecord {
         
         // 2. 判断是叶子还是分支
         if (node.count_or_right > 0.0) {
-            if (t_box < t_min || t_box > t_max ) { continue; }
 
             let start = u32(node.left_child);
             let count = u32(node.count_or_right);
