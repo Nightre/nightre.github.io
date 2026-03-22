@@ -1,19 +1,17 @@
 class BVHNode {
     min = [0, 0, 0];
     max = [0, 0, 0];
-    leftChild = 0;  // 如果是正数，指向节点索引；如果是负数，表示叶子节点
+    leftChild = 0;
     rightChild = 0;
-    count = 0;      // 这个节点包含的三角形数量（0 表示非叶子）
+    count = 0;
 }
 
 export class SceneBuilder {
     constructor() {
         this.triangles = [];
-        this.floatPerTriangle = 44; // 对齐后的长度 (12 + 12 + 6 + 2 + 12)
+        this.floatPerTriangle = 44;
     }
-    // 封装最基础的添加三角形
     addTriangle(v0, v1, v2, uvs, mat, normals) {
-        // 如果没有法线，则根据顶点顺序计算面法线
         let n0, n1, n2;
         if (!normals || normals.length < 3) {
             const e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
@@ -42,7 +40,7 @@ export class SceneBuilder {
 
     getTriangleAABB(tri) {
         const v = tri.v;
-        const eps = 0.0001; // 🌟 关键魔法：给包围盒增加极微小的厚度
+        const eps = 0.0001;
 
         const min = [
             Math.min(v[0][0], v[1][0], v[2][0]) - eps,
@@ -71,7 +69,6 @@ export class SceneBuilder {
     }
 
     buildBVH() {
-        // 1. 预处理：计算所有三角形的 AABB 和中心点
         const objects = this.triangles.map((tri, index) => ({
             index,
             ...this.getTriangleAABB(tri)
@@ -84,7 +81,6 @@ export class SceneBuilder {
         const recursiveBuild = (objs) => {
             const node = new BVHNode();
 
-            // 1. 先给自己在数组里占个座，拿到确定的索引！
             const currentIndex = nodes.length;
             nodes.push(node);
 
@@ -97,15 +93,12 @@ export class SceneBuilder {
 
             const n = objs.length;
             if (n <= 2) {
-                // 叶子节点
                 node.leftChild = orderedIdxCursor;
                 node.count = n;
-                // 注意：叶子节点的 rightChild 保持为 0，不影响
                 for (const obj of objs) {
                     orderedIndices[orderedIdxCursor++] = obj.index;
                 }
             } else {
-                // 内部节点
                 const extent = [
                     bounds.max[0] - bounds.min[0],
                     bounds.max[1] - bounds.min[1],
@@ -121,11 +114,9 @@ export class SceneBuilder {
 
                 node.leftChild = recursiveBuild(objs.slice(0, mid));
 
-                // 🌟 修复：将其赋值给 rightChild，并将 count 显式设为 0
                 node.rightChild = recursiveBuild(objs.slice(mid));
                 node.count = 0;
             }
-            // 2. 返回当前节点的索引给父节点
             return currentIndex;
         };
 
@@ -133,16 +124,22 @@ export class SceneBuilder {
         return { nodes, orderedIndices };
     }
 
-    // 封装创建立方体 (6个面，12个三角形)
-    addCube(center, size, mat) {
-        const r = size / 2;
+    addCube(center, sizeOrMat = 1, mat) {
+        let size = sizeOrMat;
+        // If second argument is an object (not an array) and mat is undefined, treat second argument as mat
+        if (typeof sizeOrMat === 'object' && !Array.isArray(sizeOrMat) && mat === undefined) {
+            mat = sizeOrMat;
+            size = 1;
+        }
+
+        const s = Array.isArray(size) ? size : [size, size, size];
+        const [rx, ry, rz] = s.map(v => v / 2);
         const [cx, cy, cz] = center;
-        // 8 个顶点
         const v = [
-            [cx - r, cy - r, cz - r], [cx + r, cy - r, cz - r], // 0, 1
-            [cx + r, cy + r, cz - r], [cx - r, cy + r, cz - r], // 2, 3
-            [cx - r, cy - r, cz + r], [cx + r, cy - r, cz + r], // 4, 5
-            [cx + r, cy + r, cz + r], [cx - r, cy + r, cz + r]  // 6, 7
+            [cx - rx, cy - ry, cz - rz], [cx + rx, cy - ry, cz - rz], // 0, 1
+            [cx + rx, cy + ry, cz - rz], [cx - rx, cy + ry, cz - rz], // 2, 3
+            [cx - rx, cy - ry, cz + rz], [cx + rx, cy - ry, cz + rz], // 4, 5
+            [cx + rx, cy + ry, cz + rz], [cx - rx, cy + ry, cz + rz]  // 6, 7
         ];
         // 定义 6 个面 (每个面由两个三角形组成)
         const faces = [
@@ -168,27 +165,27 @@ export class SceneBuilder {
         }
     }
     flattenBVH(nodes) {
-        const data = new Float32Array(nodes.length * 8); // 每个节点 8 个 float
+        const data = new Float32Array(nodes.length * 8);
         for (let i = 0; i < nodes.length; i++) {
             const n = nodes[i];
             const off = i * 8;
             data[off + 0] = n.min[0];
             data[off + 1] = n.min[1];
             data[off + 2] = n.min[2];
-            data[off + 3] = n.leftChild; // 左子/起始索引
+            data[off + 3] = n.leftChild;
 
             data[off + 4] = n.max[0];
             data[off + 5] = n.max[1];
             data[off + 6] = n.max[2];
             if (n.count > 0) {
-                data[off + 7] = n.count; // 正数表示三角形数量
+                data[off + 7] = n.count;
             } else {
-                data[off + 7] = -n.rightChild; // 负数表示这是右子节点的索引
+                data[off + 7] = -n.rightChild;
             }
         }
         return data;
     }
-    // 将所有数据导出为存储缓冲区所需的 Float32Array
+
     build() {
         const data = new Float32Array(this.triangles.length * this.floatPerTriangle);
         let offset = 0;

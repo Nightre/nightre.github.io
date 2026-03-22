@@ -1,149 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Basic WebGPU</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            color: white;
-            font-family: sans-serif;
-            user-select: none;
-        }
-        canvas {
-            max-width: 100%;
-            max-height: 100vh;
-            display: block;
-            touch-action: none;
-            background: #000;
-        }
-        #ui {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-        #ui button {
-            pointer-events: auto;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            backdrop-filter: blur(5px);
-        }
-
-        /* Standard Controls Layout */
-        .controls-container {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            pointer-events: none;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .dpad {
-            display: grid;
-            grid-template-areas: 
-                ". up ."
-                "left . right"
-                ". down .";
-            gap: 5px;
-            pointer-events: auto;
-        }
-
-        .vertical-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: auto;
-        }
-
-        .btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: none;
-        }
-
-        .btn:active {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        #btn-up { grid-area: up; }
-        #btn-down { grid-area: down; }
-        #btn-left { grid-area: left; }
-        #btn-right { grid-area: right; }
-
-        #instructions {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            pointer-events: none;
-        }
-
-        @media (min-width: 768px) {
-            .controls-container {
-                display: none; /* Hide on larger screens if desired, or keep as fallback */
-            }
-        }
-    </style>
 </head>
+
 <body>
-    <canvas id="canvas" width="960" height="620"></canvas>
-    
-    <div id="instructions">
-        PC: WASD / QE / Mouse Drag<br>
-        Touch: Drag Screen to Rotate
-    </div>
-
-    <div id="ui">
-        <button id="nextFrameBtn">Next Frame</button>
-    </div>
-
-    <div class="controls-container">
-        <!-- Movement D-Pad -->
-        <div class="dpad">
-            <div id="btn-up" class="btn" data-key="KeyW">W</div>
-            <div id="btn-down" class="btn" data-key="KeyS">S</div>
-            <div id="btn-left" class="btn" data-key="KeyA">A</div>
-            <div id="btn-right" class="btn" data-key="KeyD">D</div>
-        </div>
-
-        <!-- Elevation Buttons -->
-        <div class="vertical-buttons">
-            <div id="btn-elevate" class="btn" data-key="KeyE">↑</div>
-            <div id="btn-descend" class="btn" data-key="KeyQ">↓</div>
-        </div>
-    </div>
+    <canvas id="canvas" width="512" height="512"></canvas><br>
+    <button id="nextFrameBtn">Next Frame</button>
 
     <script type="module" src="main.js"></script>
 </body>
+
 </html>
