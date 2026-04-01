@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" width="200" height="220">
+  <!-- 身体 -->
+  <ellipse cx="100" cy="160" rx="55" ry="45" fill="#f5c842" />
+
+  <!-- 头 -->
+  <circle cx="100" cy="95" r="48" fill="#f5c842" />
+
+  <!-- 左耳朵 -->
+  <polygon points="62,58 48,22 85,52" fill="#f5c842" />
+  <!-- 左耳内 -->
+  <polygon points="64,55 53,30 80,52" fill="#ffaabb" />
+
+  <!-- 右耳朵 -->
+  <polygon points="138,58 152,22 115,52" fill="#f5c842" />
+  <!-- 右耳内 -->
+  <polygon points="136,55 147,30 120,52" fill="#ffaabb" />
+
+  <!-- 脸部浅色区域 -->
+  <ellipse cx="100" cy="102" rx="32" ry="28" fill="#fde68a" />
+
+  <!-- 左眼 -->
+  <ellipse cx="84" cy="90" rx="9" ry="10" fill="#3d2b1f" />
+  <circle cx="87" cy="87" r="3" fill="white" />
+
+  <!-- 右眼 -->
+  <ellipse cx="116" cy="90" rx="9" ry="10" fill="#3d2b1f" />
+  <circle cx="119" cy="87" r="3" fill="white" />
+
+  <!-- 鼻子 -->
+  <ellipse cx="100" cy="104" rx="5" ry="3.5" fill="#ff8899" />
+
+  <!-- 嘴巴 -->
+  <path d="M 100 108 Q 90 115 84 112" stroke="#5c3a2a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M 100 108 Q 110 115 116 112" stroke="#5c3a2a" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+
+  <!-- 左脸腮红 -->
+  <ellipse cx="72" cy="108" rx="10" ry="7" fill="rgba(255,150,170,0.35)" />
+
+  <!-- 右脸腮红 -->
+  <ellipse cx="128" cy="108" rx="10" ry="7" fill="rgba(255,150,170,0.35)" />
+
+  <!-- 胡须左 -->
+  <line x1="94" y1="105" x2="55" y2="100" stroke="#8a6a50" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="94" y1="108" x2="55" y2="110" stroke="#8a6a50" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="94" y1="111" x2="58" y2="119" stroke="#8a6a50" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- 胡须右 -->
+  <line x1="106" y1="105" x2="145" y2="100" stroke="#8a6a50" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="106" y1="108" x2="145" y2="110" stroke="#8a6a50" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="106" y1="111" x2="142" y2="119" stroke="#8a6a50" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- 左前爪 -->
+  <ellipse cx="68" cy="198" rx="16" ry="11" fill="#f5c842" />
+  <line x1="60" y1="205" x2="62" y2="210" stroke="#e09820" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="68" y1="207" x2="68" y2="212" stroke="#e09820" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="76" y1="205" x2="74" y2="210" stroke="#e09820" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- 右前爪 -->
+  <ellipse cx="132" cy="198" rx="16" ry="11" fill="#f5c842" />
+  <line x1="124" y1="205" x2="126" y2="210" stroke="#e09820" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="132" y1="207" x2="132" y2="212" stroke="#e09820" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="140" y1="205" x2="138" y2="210" stroke="#e09820" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- 尾巴 -->
+  <path d="M 152 165 Q 185 145 178 120 Q 172 100 188 95" stroke="#e09820" stroke-width="10" fill="none" stroke-linecap="round"/>
+
+  <!-- 尾巴尖 -->
+  <circle cx="188" cy="93" r="7" fill="#ffaabb" />
+
+  <!-- 肚皮条纹装饰 -->
+  <path d="M 88 148 Q 100 155 112 148" stroke="#e09820" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <path d="M 84 158 Q 100 167 116 158" stroke="#e09820" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.5"/>
+</svg>
