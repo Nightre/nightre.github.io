@@ -2,56 +2,34 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>分享测试页</title>
+    
+    <!-- 😈 核心1：给 QQ 和微信爬虫看的假新闻标签 (itemprop 是腾讯系最认的标签) -->
+    <meta itemprop="name" content="生死8秒！女司机高速急刹，他一个操作救下一车性命！">
+    <meta itemprop="description" content="监控拍下惊险一幕，交警看完都捏了一把汗...">
+    <meta itemprop="image" content="https://cdn.pixabay.com/photo/2014/09/07/22/34/car-crash-438467_960_720.jpg">
+    
+    <!-- 备用：Open Graph 协议（兼容其他社交软件解析） -->
+    <meta property="og:title" content="生死8秒！女司机高速急刹，他一个操作救下一车性命！">
+    <meta property="og:description" content="监控拍下惊险一幕，交警看完都捏了一把汗...">
+    <meta property="og:image" content="https://cdn.pixabay.com/photo/2014/09/07/22/34/car-crash-438467_960_720.jpg">
+
+    <title>生死8秒！女司机高速急刹...</title>
+
+    <!-- 🎵 核心2：瞬间重定向！当受害者打开这个网页，0.1秒内直接跳转到 Rickroll -->
+    <script>
+        // 替换为 B站 Rickroll 视频链接
+        window.location.href = "https://www.bilibili.com/video/BV1GJ411x7h7";
+    </script>
+    
+    <!-- 备用重定向：防止 JS 被禁用，利用 meta 标签在 0 秒后跳转 -->
+    <meta http-equiv="refresh" content="0;url=https://www.bilibili.com/video/BV1GJ411x7h7">
+
     <style>
-        /* 随便写点样式让按钮好看点 */
-        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
-        .share-btn {
-            padding: 15px 30px;
-            font-size: 18px;
-            color: white;
-            background-color: #12b7f5; /* QQ蓝 */
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: 0.2s;
-        }
-        .share-btn:hover { background-color: #0e9dd2; }
+        /* 如果网速慢卡了一瞬间，页面显示全黑，假装在加载视频 */
+        body { background-color: #000; color: #fff; text-align: center; margin-top: 20%; font-family: sans-serif; }
     </style>
 </head>
 <body>
-
-    <!-- 点击这个按钮就会触发分享 -->
-    <button class="share-btn" onclick="shareToQQ()">分享惊天大瓜到QQ</button>
-
-    <script>
-        function shareToQQ() {
-            // 🎵 1. 真实的跳转链接（你的 Rickroll 视频）
-            const targetUrl = 'https://www.bilibili.com/video/BV1GJ411x7h7';
-            
-            // 😈 2. 伪装的卡片标题（越吸引人越好）
-            const title = '关于我被程序老哥背叛了这件事...';
-            
-            // 😈 3. 伪装的卡片摘要/描述
-            const summary = '[分享] 忍体苦手 2026-3-4';
-            
-            // 😈 4. 伪装的封面图（必须是 http/https 的真实图片，找一张车祸或新闻的网图最好）
-            const pic = 'https://ibb.co/WWsTy5Q7'; 
-
-            // ⚙️ 5. 拼接腾讯官方的分享协议 URL（参数必须 encodeURIComponent 转义）
-            const qqShareUrl = 'http://connect.qq.com/widget/shareqq/index.html' +
-                '?url=' + encodeURIComponent(targetUrl) +
-                '&title=' + encodeURIComponent(title) +
-                '&summary=' + encodeURIComponent(summary) +
-                '&pics=' + encodeURIComponent(pic);
-
-            // 🚀 6. 打开分享窗口拉起 QQ
-            // 在电脑端会弹出一个网页让你选群/好友，手机端会尝试直接拉起 QQ App
-            window.open(qqShareUrl, '_blank');
-        }
-    </script>
-
+    <p>正在加载监控录像...</p>
 </body>
 </html>
