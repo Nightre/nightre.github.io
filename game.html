@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>花店里的夏叶同学 - Web端测试版</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            /* 移除了背景色、边框和阴影，去掉卡片效果，融入背景 */
+            padding: 40px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 1.5rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+        .progress-container {
+            width: 100%;
+            height: 24px;
+            background-color: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #007acc;
+            transition: width 0.2s ease;
+        }
+        .status-text {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #9cdcfe;
+            margin-bottom: 15px;
+            min-height: 20px;
+        }
+        .warning {
+            color: #ce9178;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            background: rgba(206, 145, 120, 0.1);
+            padding: 10px;
+            border-left: 4px solid #ce9178;
+            border-radius: 3px;
+        }
+        .warning-icon {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>花店里的夏叶同学 [Web端内测版]</h2>
+        <div class="status-text" id="status">正在拉取引擎模块...</div>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="bar"></div>
+        </div>
+        
+        <div class="warning">
+            <span class="warning-icon">⚠️</span>
+            <span>请保持当前标签页处于激活状态。切换后台可能导致 WebGL 渲染上下文丢失，从而中断加载进程。</span>
+        </div>
+    </div>
+
+    <script>
+        const bar = document.getElementById('bar');
+        const status = document.getElementById('status');
+        
+        // 专门伪造的视觉小说 + 解密游戏加载步骤文本
+        const steps = [
+            "正在初始化 WebAssembly 运行环境...",
+            "正在分配内存缓冲区...",
+            "正在编译 2D 渲染着色器...",
+            "正在挂载虚拟文件系统 (VFS)...",
+            "正在解析剧本节点与对话树...",
+            "正在预载入角色立绘与场景音频...",
+            "正在初始化解密模块与逻辑引擎...",
+            "等待最终上下文执行..."
+        ];
+
+        let progress = 0;
+        let stepIndex = 0;
+
+        // 模拟折磨人的加载过程
+        const interval = setInterval(() => {
+            let increment = Math.random() * 1.5; 
+            
+            if (progress > 30 && progress < 33) increment = 0.1;
+            if (progress > 75 && progress < 78) increment = 0.05;
+
+            progress += increment;
+
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                status.innerText = "加载完成，正在启动引擎...";
+                status.style.color = "#4CAF50";
+                
+                // 满进度条后停顿 0.8 秒，然后背刺跳转到 Rickroll！
+                setTimeout(() => {
+                    window.location.href = "https://b23.tv/BV1UT42167xb";
+                }, 800);
+            }
+
+            bar.style.width = progress + "%";
+
+            // 根据进度切换文本
+            const expectedIndex = Math.floor((progress / 100) * steps.length);
+            if (expectedIndex > stepIndex && expectedIndex < steps.length) {
+                stepIndex = expectedIndex;
+                status.innerText = steps[stepIndex];
+            }
+        }, 150); 
+    </script>
+
+</body>
+</html>
