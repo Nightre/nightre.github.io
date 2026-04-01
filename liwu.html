@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>神秘惊喜解密中...</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .loader {
+            border: 3px solid #333;
+            border-top: 3px solid #00ffcc;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 25px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        p {
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader"></div>
+    <p id="status-text">正在检测时间...</p>
+
+    <script>
+        const statusText = document.getElementById('status-text');
+        
+        // 制造虚假的解密过程，拉满期待值
+        setTimeout(() => {
+            statusText.innerText = "正在提取 10 天前的惊喜...";
+        }, 2000);
+
+        setTimeout(() => {
+            statusText.innerText = "提取成功！即将展示...";
+            statusText.style.color = "#ff003c";
+            statusText.style.textShadow = "0 0 5px #ff003c";
+        }, 2000 + 2000);
+
+        // 终极背刺：跳转到瑞克摇
+        setTimeout(() => {
+            window.location.href = "https://b23.tv/BV1UT42167xb";
+        }, 2000 + 2000 + 2000);
+    </script>
+</body>
+</html>
