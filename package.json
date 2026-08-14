@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "scripts": {
+    "bones": "bun run scripts/read-fbx-bones.js Walking.fbx",
+    "bones:json": "bun run scripts/read-fbx-bones.js Walking.fbx --json"
+  }
+}

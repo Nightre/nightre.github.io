@@ -1,0 +1,1257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>手动人体火柴人标注 + Three.js 模型叠加</title>
+  <style>
+    body {
+      margin: 12px;
+      color: black;
+      background: white;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 16px;
+    }
+
+    main {
+      max-width: 1200px;
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 0 0 12px 0;
+    }
+
+    .panel {
+      border: 1px solid #999;
+      background: white;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    .topbar {
+      display: block;
+    }
+
+    .file-button {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .file-button input {
+      position: static;
+      opacity: 1;
+      margin-left: 6px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      color: #777;
+      cursor: not-allowed;
+    }
+
+    button.primary {
+      font-weight: bold;
+      border-color: #111;
+    }
+
+    .workspace {
+      display: block;
+      width: 100%;
+    }
+
+    .stage {
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 620px;
+      border: 1px solid #999;
+      background: #eee;
+      overflow: hidden;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    #canvas {
+      display: none;
+      position: relative;
+      z-index: 1;
+      max-width: 100%;
+      max-height: 88vh;
+      margin: 0 auto;
+      border: 1px solid black;
+      cursor: crosshair;
+      user-select: none;
+      touch-action: none;
+      background: white;
+    }
+
+    .three-layer {
+      display: none;
+      position: absolute;
+      z-index: 2;
+      pointer-events: none;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .three-layer canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    .placeholder {
+      text-align: center;
+      padding: 260px 30px 30px 30px;
+    }
+
+    .placeholder-icon {
+      font-size: 32px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px 0;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .current {
+      margin: 0;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .status {
+      margin: 8px 0 0 0;
+      font-size: 14px;
+    }
+
+    .progress {
+      margin-top: 10px;
+      height: 12px;
+      overflow: hidden;
+      border: 1px solid black;
+      background: white;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: #999;
+    }
+
+    .fit-progress span {
+      background: #111;
+    }
+
+    .fit-readout {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hint {
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .canvas-wrap {
+        min-height: 480px;
+      }
+
+      .placeholder {
+        padding-top: 190px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        margin: 6px;
+      }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>手动人体火柴人标注</h1>
+      <p class="lead">
+        不用 MediaPipe，也不用任何 AI。上传图片后，页面会按顺序让你点击身体部位；
+        每点一个位置，就会立刻在图片上画出火柴人线条。点完后会把根目录的 Walking.fbx 叠到图片上方。
+      </p>
+    </section>
+
+    <section class="topbar panel">
+      <label class="file-button">
+        <span>上传图片</span>
+        <input id="fileInput" type="file" accept="image/*" />
+      </label>
+      <label class="file-button">
+        <span>上传 Mixamo FBX</span>
+        <input id="fbxInput" type="file" accept=".fbx,model/fbx,application/octet-stream" />
+      </label>
+
+      <div class="actions">
+        <label>
+          <input id="playAnimationInput" type="checkbox" />
+          播放 FBX 动画
+        </label>
+        <button id="undoBtn" type="button" disabled>上一步</button>
+        <button id="skipBtn" type="button" disabled>跳过当前点</button>
+        <button id="resetBtn" type="button" disabled>清空点位</button>
+        <button id="fitBtn" class="primary" type="button" disabled>拟合当前点位</button>
+        <button id="stopFitBtn" type="button" disabled>停止拟合</button>
+        <button id="downloadBtn" type="button" disabled>下载标注图</button>
+        <button id="jsonBtn" type="button" disabled>下载 JSON</button>
+      </div>
+    </section>
+
+    <section class="instruction panel">
+      <p class="eyebrow">当前步骤</p>
+      <p id="currentText" class="current">请先上传图片</p>
+      <p id="statusText" class="status">纯手动标注，所有点都只保存在当前浏览器页面里。</p>
+      <p id="modelStatus" class="status">选择至少 3 个 Mixamo 节点后即可开始 3D 拟合。</p>
+      <div class="progress" aria-label="标注进度">
+        <span id="progressBar"></span>
+      </div>
+      <p id="fitStatus" class="status fit-readout">尚未开始 3D 拟合。</p>
+      <div class="progress fit-progress" aria-label="3D 拟合进度">
+        <span id="fitProgressBar"></span>
+      </div>
+      <p class="hint">
+        <strong>小提示：</strong>“左/右”建议按图片里人物自己的左/右来点。点错了可以按“上一步”。
+      </p>
+    </section>
+
+    <section class="workspace">
+      <section class="stage panel">
+        <div class="canvas-wrap">
+          <div id="placeholder" class="placeholder">
+            <div class="placeholder-icon">📍</div>
+            <div>
+              <strong>先上传一张图片。</strong><br />
+              然后按上方提示，在图片上一个一个点击身体部位。
+            </div>
+          </div>
+          <canvas id="canvas"></canvas>
+          <div id="threeLayer" class="three-layer" aria-hidden="true"></div>
+        </div>
+      </section>
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script type="module">
+    import * as THREE from "three";
+    import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+    import { PoseFitter } from "./pose-fitter.js";
+
+    const MODEL_URL = "./Walking.fbx";
+    const POPULATION_SIZE = 10000;
+    const CAMERA_LEARNING_RATE = 0.005;
+    const BONE_LEARNING_RATE = 0.035;
+    const BONE_INITIAL_ROTATION_RADIANS = 1.1;
+    const STEPS = [
+      { id: "Head", label: "Head", boneName: "mixamorig:Head" },
+      { id: "Neck", label: "Neck", boneName: "mixamorig:Neck" },
+      { id: "Hips", label: "Hips", boneName: "mixamorig:Hips" },
+      { id: "RightArm", label: "RightArm", boneName: "mixamorig:RightArm" },
+      { id: "RightForeArm", label: "RightForeArm", boneName: "mixamorig:RightForeArm" },
+      { id: "RightHand", label: "RightHand", boneName: "mixamorig:RightHand" },
+      {
+        id: "RightHandEnd",
+        label: "RightHand_end",
+        boneName: "mixamorig:RightHand",
+        targetKind: "end",
+      },
+      { id: "LeftArm", label: "LeftArm", boneName: "mixamorig:LeftArm" },
+      { id: "LeftForeArm", label: "LeftForeArm", boneName: "mixamorig:LeftForeArm" },
+      { id: "LeftHand", label: "LeftHand", boneName: "mixamorig:LeftHand" },
+      {
+        id: "LeftHandEnd",
+        label: "LeftHand_end",
+        boneName: "mixamorig:LeftHand",
+        targetKind: "end",
+      },
+      { id: "RightUpLeg", label: "RightUpLeg", boneName: "mixamorig:RightUpLeg" },
+      { id: "RightLeg", label: "RightLeg", boneName: "mixamorig:RightLeg" },
+      { id: "RightFoot", label: "RightFoot", boneName: "mixamorig:RightFoot" },
+      {
+        id: "RightFootEnd",
+        label: "RightFoot_end",
+        boneName: "mixamorig:RightFoot",
+        targetKind: "end",
+      },
+      { id: "LeftUpLeg", label: "LeftUpLeg", boneName: "mixamorig:LeftUpLeg" },
+      { id: "LeftLeg", label: "LeftLeg", boneName: "mixamorig:LeftLeg" },
+      { id: "LeftFoot", label: "LeftFoot", boneName: "mixamorig:LeftFoot" },
+      {
+        id: "LeftFootEnd",
+        label: "LeftFoot_end",
+        boneName: "mixamorig:LeftFoot",
+        targetKind: "end",
+      },
+    ];
+
+    const CONNECTIONS = [
+      ["Head", "Neck"],
+      ["Neck", "Hips"],
+      ["RightArm", "LeftArm"],
+      ["Hips", "RightArm"],
+      ["Hips", "LeftArm"],
+      ["RightArm", "RightForeArm"],
+      ["RightForeArm", "RightHand"],
+      ["RightHand", "RightHandEnd"],
+      ["LeftArm", "LeftForeArm"],
+      ["LeftForeArm", "LeftHand"],
+      ["LeftHand", "LeftHandEnd"],
+      ["Hips", "RightUpLeg"],
+      ["RightUpLeg", "RightLeg"],
+      ["RightLeg", "RightFoot"],
+      ["RightFoot", "RightFootEnd"],
+      ["Hips", "LeftUpLeg"],
+      ["LeftUpLeg", "LeftLeg"],
+      ["LeftLeg", "LeftFoot"],
+      ["LeftFoot", "LeftFootEnd"],
+    ];
+
+    const fileInput = document.querySelector("#fileInput");
+    const fbxInput = document.querySelector("#fbxInput");
+    const playAnimationInput = document.querySelector("#playAnimationInput");
+    const undoBtn = document.querySelector("#undoBtn");
+    const skipBtn = document.querySelector("#skipBtn");
+    const resetBtn = document.querySelector("#resetBtn");
+    const fitBtn = document.querySelector("#fitBtn");
+    const stopFitBtn = document.querySelector("#stopFitBtn");
+    const downloadBtn = document.querySelector("#downloadBtn");
+    const jsonBtn = document.querySelector("#jsonBtn");
+    const placeholder = document.querySelector("#placeholder");
+    const canvas = document.querySelector("#canvas");
+    const ctx = canvas.getContext("2d");
+    const threeLayer = document.querySelector("#threeLayer");
+    const currentText = document.querySelector("#currentText");
+    const statusText = document.querySelector("#statusText");
+    const modelStatus = document.querySelector("#modelStatus");
+    const progressBar = document.querySelector("#progressBar");
+    const fitStatus = document.querySelector("#fitStatus");
+    const fitProgressBar = document.querySelector("#fitProgressBar");
+
+    let image = null;
+    let imageName = "";
+    let fbxSourceUrl = MODEL_URL;
+    let fbxSourceName = "Walking.fbx";
+    let uploadedFbxObjectUrl = null;
+    let points = {};
+    let skipped = new Set();
+    let currentIndex = 0;
+    let history = [];
+    let scene = null;
+    let camera = null;
+    let renderer = null;
+    let modelRoot = null;
+    let fbxModel = null;
+    let modelLoadPromise = null;
+    let animationMixer = null;
+    let animationAction = null;
+    let animationClock = new THREE.Clock();
+    let animationFrameId = null;
+    let poseFitter = null;
+    let activeFitPromise = null;
+    let lastFitResult = null;
+    let fitRequested = false;
+    let isOptimizing = false;
+    let fitGeneration = 0;
+
+    updateUi();
+
+    window.addEventListener("resize", syncThreeLayer);
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(syncThreeLayer).observe(canvas);
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("image/")) {
+        statusText.textContent = "请选择图片文件。";
+        return;
+      }
+
+      try {
+        await stopPoseFit({ hideModel: true });
+        imageName = file.name;
+        image = await loadImage(file);
+        points = {};
+        skipped = new Set();
+        history = [];
+        currentIndex = 0;
+        lastFitResult = null;
+        fitRequested = false;
+        hideThreeLayer();
+        fitCanvasToImage(image);
+        placeholder.style.display = "none";
+        canvas.style.display = "block";
+        syncThreeLayer();
+        draw();
+        updateUi();
+      } catch (error) {
+        statusText.textContent = `图片读取失败：${error.message}`;
+      }
+    });
+
+    fbxInput.addEventListener("change", async () => {
+      const file = fbxInput.files?.[0];
+      if (!file) return;
+
+      if (!file.name.toLowerCase().endsWith(".fbx")) {
+        modelStatus.textContent = "请选择 Mixamo 下载的 .fbx 文件。";
+        fbxInput.value = "";
+        return;
+      }
+
+      await stopPoseFit({ hideModel: true, preserveStatus: true });
+      setFbxSourceFromFile(file);
+      lastFitResult = null;
+      fitRequested = false;
+      fitProgressBar.style.width = "0%";
+      fitStatus.textContent = "FBX 已更换，等待重新拟合。";
+      modelStatus.textContent = `已选择 ${fbxSourceName}；拟合时会使用这个 FBX。`;
+
+      if (image) {
+        try {
+          ensureThreeScene();
+          syncThreeLayer();
+          threeLayer.style.display = "block";
+          await loadCurrentFbxModel();
+          modelRoot.visible = true;
+          renderThreeScene();
+        } catch (error) {
+          console.error(error);
+          modelStatus.textContent = `FBX 加载失败：${error.message}`;
+        }
+      }
+
+      updateUi();
+    });
+
+    playAnimationInput.addEventListener("change", () => {
+      applyAnimationPlaybackState();
+      renderThreeScene();
+      if (playAnimationInput.checked) {
+        modelStatus.textContent = animationAction
+          ? "正在播放 FBX 动画；相机位置和旋转保持不变。"
+          : "当前 FBX 没有可播放动画；相机位置和旋转保持不变。";
+      } else if (fbxModel) {
+        modelStatus.textContent = "FBX 动画已暂停；相机位置和旋转保持不变。";
+      }
+    });
+
+    canvas.addEventListener("pointerdown", async (event) => {
+      if (!image) return;
+      if (isLabelingDone()) {
+        statusText.textContent = "当前点位已经处理完。要修改的话，请按“上一步”退回。";
+        return;
+      }
+
+      const step = STEPS[currentIndex];
+      if (!step) return;
+
+      const point = getCanvasPoint(event);
+      const oldPoint = points[step.id] ? { ...points[step.id] } : null;
+
+      points[step.id] = point;
+      history.push({
+        type: "point",
+        id: step.id,
+        previous: oldPoint,
+        index: currentIndex,
+      });
+
+      currentIndex = findNextMissingIndex(currentIndex + 1);
+      await stopPoseFit({ hideModel: false });
+      lastFitResult = null;
+      fitRequested = false;
+      fitStatus.textContent = "点位已变化，等待重新拟合。";
+      fitProgressBar.style.width = "0%";
+      draw();
+      updateUi();
+      maybeStartAutomaticFit();
+    });
+
+    undoBtn.addEventListener("click", async () => {
+      const last = history.pop();
+      if (!last) return;
+
+      if (last.type === "skip") {
+        skipped.delete(last.id);
+      } else if (last.previous) {
+        points[last.id] = last.previous;
+      } else {
+        delete points[last.id];
+      }
+
+      currentIndex = last.index;
+      await stopPoseFit({ hideModel: false });
+      lastFitResult = null;
+      fitRequested = false;
+      fitStatus.textContent = "点位已变化，等待重新拟合。";
+      fitProgressBar.style.width = "0%";
+      draw();
+      updateUi();
+    });
+
+    skipBtn.addEventListener("click", async () => {
+      if (!image || isLabelingDone()) return;
+      const step = STEPS[currentIndex];
+      if (!step) return;
+
+      skipped.add(step.id);
+      history.push({ type: "skip", id: step.id, index: currentIndex });
+      currentIndex = findNextMissingIndex(currentIndex + 1);
+      await stopPoseFit({ hideModel: false });
+      lastFitResult = null;
+      fitRequested = false;
+      fitStatus.textContent = "点位已变化，等待重新拟合。";
+      fitProgressBar.style.width = "0%";
+      updateUi();
+      maybeStartAutomaticFit();
+    });
+
+    resetBtn.addEventListener("click", async () => {
+      if (!image) return;
+      const hasAnyPoint = Object.keys(points).length > 0 || skipped.size > 0;
+
+      if (!hasAnyPoint || confirm("确定清空所有点位吗？")) {
+        await stopPoseFit({ hideModel: true });
+        points = {};
+        skipped = new Set();
+        history = [];
+        currentIndex = 0;
+        lastFitResult = null;
+        fitRequested = false;
+        hideThreeLayer();
+        draw();
+        updateUi();
+      }
+    });
+
+    fitBtn.addEventListener("click", () => {
+      startPoseFit();
+    });
+
+    stopFitBtn.addEventListener("click", () => {
+      stopPoseFit({ hideModel: false });
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!image) return;
+      draw();
+      renderThreeScene();
+
+      const link = document.createElement("a");
+      link.download = makeFileName("stickman-annotation", "png");
+      link.href = createCompositeCanvas().toDataURL("image/png");
+      link.click();
+    });
+
+    jsonBtn.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(buildJson(), null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = makeFileName("stickman-points", "json");
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const nextImage = new Image();
+
+        nextImage.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(nextImage);
+        };
+
+        nextImage.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("无法读取这张图片"));
+        };
+
+        nextImage.src = url;
+      });
+    }
+
+    function fitCanvasToImage(sourceImage) {
+      const maxSide = 2200;
+      const sourceWidth = sourceImage.naturalWidth || sourceImage.width;
+      const sourceHeight = sourceImage.naturalHeight || sourceImage.height;
+      const scale = Math.min(1, maxSide / Math.max(sourceWidth, sourceHeight));
+
+      canvas.width = Math.round(sourceWidth * scale);
+      canvas.height = Math.round(sourceHeight * scale);
+    }
+
+    function getCanvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
+      const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+
+      return {
+        x: clamp(x, 0, canvas.width),
+        y: clamp(y, 0, canvas.height),
+        nx: clamp(x / canvas.width, 0, 1),
+        ny: clamp(y / canvas.height, 0, 1),
+      };
+    }
+
+    function draw() {
+      if (!image) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      drawConnections();
+      drawPoints();
+    }
+
+    function drawConnections() {
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = lineWidth();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+
+      for (const [from, to] of CONNECTIONS) {
+        const a = points[from];
+        const b = points[to];
+        if (!a || !b) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawPoints() {
+      const r = pointRadius();
+
+      STEPS.forEach((step, index) => {
+        const point = points[step.id];
+        if (!point) return;
+
+        const isCurrent = index === currentIndex;
+
+        ctx.save();
+        drawTriangle(point.x, point.y, isCurrent ? r * 1.25 : r);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.62)";
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.95)";
+        ctx.lineWidth = Math.max(1, r * 0.22);
+        ctx.fill();
+        ctx.stroke();
+
+        drawLabel(point, `${index + 1}. ${step.label}`, isCurrent);
+        ctx.restore();
+      });
+    }
+
+    function drawTriangle(x, y, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - radius);
+      ctx.lineTo(x + radius * 0.88, y + radius * 0.72);
+      ctx.lineTo(x - radius * 0.88, y + radius * 0.72);
+      ctx.closePath();
+    }
+
+    function drawLabel(point, text) {
+      const r = pointRadius();
+      const fontSize = Math.max(10, Math.min(14, canvas.width / 120));
+      const paddingX = 4;
+      const paddingY = 3;
+
+      ctx.font = `${fontSize}px Arial, sans-serif`;
+      const metrics = ctx.measureText(text);
+      let x = point.x + r + 5;
+      let y = point.y - r - 5;
+      const boxWidth = metrics.width + paddingX * 2;
+      const boxHeight = fontSize + paddingY * 2;
+
+      if (x + boxWidth > canvas.width) x = point.x - r - 5 - boxWidth;
+      if (y - boxHeight < 0) y = point.y + r + 5 + boxHeight;
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+      ctx.fillRect(x, y - boxHeight, boxWidth, boxHeight);
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.75)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y - boxHeight, boxWidth, boxHeight);
+      ctx.fillStyle = "black";
+      ctx.fillText(text, x + paddingX, y - paddingY);
+    }
+
+    function updateUi() {
+      const count = Object.keys(points).length;
+      const resolvedCount = count + skipped.size;
+      const percent = Math.round((resolvedCount / STEPS.length) * 100);
+
+      progressBar.style.width = `${percent}%`;
+      undoBtn.disabled = history.length === 0;
+      skipBtn.disabled = !image || isLabelingDone();
+      resetBtn.disabled = !image || resolvedCount === 0;
+      fitBtn.disabled = !image || count < 3 || isOptimizing;
+      stopFitBtn.disabled = !isOptimizing;
+      downloadBtn.disabled = !image || count === 0;
+      jsonBtn.disabled = count === 0;
+
+      if (!image) {
+        currentText.textContent = "请先上传图片";
+        statusText.textContent = "纯手动标注，所有点都只保存在当前浏览器页面里。";
+        modelStatus.textContent = "选择至少 3 个 Mixamo 节点后即可开始 3D 拟合。";
+      } else if (isLabelingDone()) {
+        currentText.textContent = "点位处理完成";
+        statusText.textContent = `已选择 ${count} 个、跳过 ${skipped.size} 个 Mixamo 节点。可重新拟合或下载结果。`;
+      } else {
+        const step = STEPS[currentIndex];
+        const action = points[step.id] ? "重新点击" : "请点击";
+        currentText.textContent = `${action}“${step.label}”`;
+        statusText.textContent = `已选择 ${count} 个、跳过 ${skipped.size} 个。没有可靠位置时可跳过当前点。`;
+        if (!fitRequested) {
+          modelStatus.textContent = count >= 3
+            ? "已有足够约束，可以先拟合当前点位，也可以继续标注。"
+            : `还需要 ${3 - count} 个点位才能拟合相机。`;
+        }
+      }
+
+      if (fitRequested && fbxModel) {
+        ensureThreeScene();
+        syncThreeLayer();
+        threeLayer.style.display = "block";
+        modelRoot.visible = true;
+        renderThreeScene();
+      }
+    }
+
+    function maybeStartAutomaticFit() {
+      if (isLabelingDone() && Object.keys(points).length >= 3 && !fitRequested) {
+        startPoseFit();
+      }
+    }
+
+    function ensureThreeScene() {
+      if (renderer) {
+        resizeThreeRenderer();
+        return;
+      }
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(40, canvas.width / canvas.height, 0.01, 100000);
+      camera.position.z = 500;
+
+      renderer = new THREE.WebGLRenderer({
+        alpha: true,
+        antialias: true,
+        preserveDrawingBuffer: true,
+      });
+      renderer.setClearColor(0x000000, 0);
+      renderer.setPixelRatio(1);
+      if ("outputColorSpace" in renderer) {
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+      }
+
+      threeLayer.innerHTML = "";
+      renderer.domElement.style.width = "100%";
+      renderer.domElement.style.height = "100%";
+      renderer.domElement.style.background = "transparent";
+      threeLayer.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 1.35));
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+      keyLight.position.set(140, 260, 480);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0x9edfff, 1.25);
+      fillLight.position.set(-260, 120, 360);
+      scene.add(fillLight);
+
+      modelRoot = new THREE.Group();
+      modelRoot.visible = false;
+      scene.add(modelRoot);
+
+      resizeThreeRenderer();
+      startThreeLoop();
+    }
+
+    function resizeThreeRenderer() {
+      if (!renderer || !camera || canvas.width === 0 || canvas.height === 0) return;
+
+      camera.aspect = canvas.width / canvas.height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(canvas.width, canvas.height, false);
+    }
+
+    function startThreeLoop() {
+      if (animationFrameId) return;
+
+      const tick = () => {
+        animationFrameId = requestAnimationFrame(tick);
+        const deltaSeconds = animationClock.getDelta();
+        if (playAnimationInput.checked && !isOptimizing && animationMixer) {
+          animationMixer.update(deltaSeconds);
+        }
+        renderThreeScene();
+      };
+
+      tick();
+    }
+
+    async function loadCurrentFbxModel() {
+      if (fbxModel) return fbxModel;
+      if (modelLoadPromise) return modelLoadPromise;
+
+      modelStatus.textContent = `正在加载 ${fbxSourceName}……`;
+
+      const loader = new FBXLoader();
+      modelLoadPromise = loader.loadAsync(fbxSourceUrl)
+        .then((object) => {
+          prepareFbxObject(object);
+          fbxModel = object;
+          modelRoot.visible = true;
+          applyAnimationPlaybackState();
+          modelStatus.textContent = animationAction
+            ? `${fbxSourceName} 已加载；动画可播放，拟合时会暂停动画。`
+            : `${fbxSourceName} 已加载；这个 FBX 没有可播放动画。`;
+          renderThreeScene();
+          return object;
+        })
+        .catch((error) => {
+          modelLoadPromise = null;
+          throw error;
+        });
+
+      return modelLoadPromise;
+    }
+
+    function setFbxSourceFromFile(file) {
+      if (uploadedFbxObjectUrl) URL.revokeObjectURL(uploadedFbxObjectUrl);
+      uploadedFbxObjectUrl = URL.createObjectURL(file);
+      fbxSourceUrl = uploadedFbxObjectUrl;
+      fbxSourceName = file.name || "uploaded.fbx";
+      disposeLoadedModel();
+    }
+
+    function disposeLoadedModel() {
+      animationMixer?.stopAllAction();
+      animationMixer = null;
+      animationAction = null;
+      fbxModel = null;
+      modelLoadPromise = null;
+      disposeModelRootChildren();
+    }
+
+    function disposeModelRootChildren() {
+      if (!modelRoot) return;
+
+      for (const child of [...modelRoot.children]) {
+        disposeObject3D(child);
+      }
+      modelRoot.clear();
+    }
+
+    function disposeObject3D(object) {
+      object.traverse((child) => {
+        child.geometry?.dispose?.();
+
+        const materials = Array.isArray(child.material)
+          ? child.material
+          : child.material ? [child.material] : [];
+        for (const material of materials) {
+          material.dispose?.();
+        }
+      });
+    }
+
+    function prepareFbxObject(object) {
+      animationMixer?.stopAllAction();
+      animationMixer = null;
+      animationAction = null;
+      disposeModelRootChildren();
+
+      object.traverse((child) => {
+        if (!child.isMesh) return;
+
+        child.frustumCulled = false;
+
+        const hasMultipleMaterials = Array.isArray(child.material);
+        const materials = hasMultipleMaterials ? child.material : [child.material];
+        const nextMaterials = materials.map((material) => {
+          const nextMaterial = material ? material.clone() : new THREE.MeshStandardMaterial();
+          nextMaterial.transparent = true;
+          nextMaterial.opacity = 0.88;
+          nextMaterial.depthWrite = true;
+          if ("side" in nextMaterial) nextMaterial.side = THREE.DoubleSide;
+          return nextMaterial;
+        });
+
+        child.material = hasMultipleMaterials ? nextMaterials : nextMaterials[0];
+      });
+
+      object.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(object);
+      const center = box.getCenter(new THREE.Vector3());
+
+      const offsetGroup = new THREE.Group();
+      offsetGroup.position.set(-center.x, -center.y, -center.z);
+      offsetGroup.add(object);
+      modelRoot.add(offsetGroup);
+
+      // Mixamo files commonly face away from a +Z camera.
+      modelRoot.rotation.set(0, Math.PI, 0);
+      modelRoot.position.set(0, 0, 0);
+      modelRoot.scale.setScalar(1);
+      scene.updateMatrixWorld(true);
+
+      saveBoneRestPose(object);
+      setupFbxAnimation(object);
+    }
+
+    function saveBoneRestPose(object) {
+      object.traverse((child) => {
+        if (!child.isBone) return;
+        child.userData.poseFitRestQuaternion = child.quaternion.toArray();
+      });
+    }
+
+    function setupFbxAnimation(object) {
+      const [clip] = object.animations || [];
+      if (!clip) return;
+
+      animationMixer = new THREE.AnimationMixer(object);
+      animationAction = animationMixer.clipAction(clip);
+      animationAction.enabled = true;
+      animationAction.paused = true;
+      animationClock.getDelta();
+    }
+
+    function applyAnimationPlaybackState() {
+      if (!animationAction) return;
+
+      if (playAnimationInput.checked) {
+        animationAction.paused = false;
+        if (!animationAction.isRunning()) animationAction.play();
+      } else {
+        animationAction.paused = true;
+      }
+      animationClock.getDelta();
+    }
+
+    function pauseAnimationPlayback() {
+      if (animationAction) animationAction.paused = true;
+      animationClock.getDelta();
+    }
+
+    async function startPoseFit() {
+      const selectedCount = Object.keys(points).length;
+      if (!image || selectedCount < 3) {
+        fitStatus.textContent = "至少选择 3 个关节点才能拟合相机。";
+        return;
+      }
+
+      await stopPoseFit({ hideModel: false, preserveStatus: true });
+      const runId = ++fitGeneration;
+      fitRequested = true;
+      isOptimizing = true;
+      lastFitResult = null;
+      fitProgressBar.style.width = "0%";
+      fitStatus.textContent = "正在准备自动微分拟合器……";
+      modelStatus.textContent = "正在加载 3D 骨架并建立关节约束……";
+      updateUi();
+
+      let fitter = null;
+      try {
+        if (!window.tf) {
+          throw new Error("TensorFlow.js 没有加载成功，请检查网络后刷新页面。");
+        }
+
+        await window.tf.ready();
+        if (runId !== fitGeneration) return;
+
+        pauseAnimationPlayback();
+        ensureThreeScene();
+        syncThreeLayer();
+        threeLayer.style.display = "block";
+        await loadCurrentFbxModel();
+        if (runId !== fitGeneration) return;
+
+        pauseAnimationPlayback();
+        modelRoot.visible = true;
+        resizeThreeRenderer();
+        scene.updateMatrixWorld(true);
+
+        fitter = new PoseFitter({
+          THREE,
+          tf: window.tf,
+          model: fbxModel,
+          scene,
+          camera,
+          renderer,
+          points: { ...points },
+          steps: STEPS,
+          connections: CONNECTIONS,
+          populationSize: POPULATION_SIZE,
+          cameraLearningRate: CAMERA_LEARNING_RATE,
+          boneLearningRate: BONE_LEARNING_RATE,
+          boneInitialRotationRadians: BONE_INITIAL_ROTATION_RADIANS,
+          onProgress: ({
+            iteration,
+            iterations,
+            bestIndex,
+            bestRmse,
+            bestFovDegrees,
+            activeBones,
+            constrainedJoints,
+          }) => {
+            if (runId !== fitGeneration) return;
+            const percent = (iteration / iterations) * 100;
+            fitProgressBar.style.width = `${percent}%`;
+            fitStatus.textContent =
+              `${POPULATION_SIZE} 路迭代 ${iteration}/${iterations} · 当前最佳 #${bestIndex + 1} · `
+              + `归一化 RMSE ${bestRmse.toFixed(6)} · FOV ${bestFovDegrees.toFixed(2)}° · `
+              + `${constrainedJoints} 个关节 / `
+              + `${activeBones} 根旋转骨骼`;
+          },
+        });
+
+        poseFitter = fitter;
+        modelStatus.textContent =
+          `${POPULATION_SIZE} 套候选同时优化 eye、target、up、FOV；初始动作也随机，相机学习率保持更低。`;
+        activeFitPromise = fitter.run(180);
+        const result = await activeFitPromise;
+        if (runId !== fitGeneration) return;
+
+        lastFitResult = result;
+        fitProgressBar.style.width = fitter.cancelled ? fitProgressBar.style.width : "100%";
+        const best = result.best;
+        fitStatus.textContent = fitter.cancelled
+          ? `拟合已停止 · 当前最佳 #${best.candidate} · 归一化 RMSE ${best.normalizedRmse.toFixed(6)}`
+          : `拟合完成 · 最佳 #${best.candidate} · 归一化 RMSE ${best.normalizedRmse.toFixed(6)} · `
+            + `${result.constrainedJoints.length} 个关节 / ${result.optimizedBones.length} 根旋转骨骼`;
+        modelStatus.textContent = `主画面使用 ${POPULATION_SIZE} 个候选中归一化 loss 最低的相机与骨骼姿态。`;
+        applyAnimationPlaybackState();
+        if (playAnimationInput.checked) {
+          modelStatus.textContent =
+            `主画面使用最佳拟合相机；正在播放 ${fbxSourceName} 的 FBX 动画。`;
+        }
+      } catch (error) {
+        console.error(error);
+        if (runId === fitGeneration) {
+          fitStatus.textContent = `拟合失败：${error.message}`;
+          modelStatus.textContent = "请确认页面由本地服务器打开，并且 Three.js 与 TensorFlow.js 可以加载。";
+        }
+      } finally {
+        fitter?.dispose();
+        if (poseFitter === fitter) poseFitter = null;
+        if (runId === fitGeneration) {
+          activeFitPromise = null;
+          isOptimizing = false;
+          updateUi();
+        }
+      }
+    }
+
+    async function stopPoseFit({ hideModel = false, preserveStatus = false } = {}) {
+      fitGeneration += 1;
+      const fitter = poseFitter;
+      const runningPromise = activeFitPromise;
+      fitter?.cancel();
+
+      if (runningPromise) {
+        try {
+          await runningPromise;
+        } catch (error) {
+          console.debug("拟合任务停止：", error);
+        }
+      }
+
+      fitter?.dispose();
+      if (poseFitter === fitter) poseFitter = null;
+      if (activeFitPromise === runningPromise) activeFitPromise = null;
+      isOptimizing = false;
+
+      if (!preserveStatus && fitter) {
+        fitStatus.textContent = "拟合已停止，可用当前点位重新开始。";
+        modelStatus.textContent = "已保留停止时的透视相机和骨骼姿态。";
+      }
+      if (hideModel) hideThreeLayer();
+      if (!hideModel) applyAnimationPlaybackState();
+      updateUi();
+    }
+
+    function syncThreeLayer() {
+      if (!canvas || canvas.style.display === "none") return;
+
+      const canvasRect = canvas.getBoundingClientRect();
+      if (canvasRect.width === 0 || canvasRect.height === 0) return;
+
+      const wrapRect = canvas.parentElement.getBoundingClientRect();
+      threeLayer.style.left = `${canvasRect.left - wrapRect.left}px`;
+      threeLayer.style.top = `${canvasRect.top - wrapRect.top}px`;
+      threeLayer.style.width = `${canvasRect.width}px`;
+      threeLayer.style.height = `${canvasRect.height}px`;
+    }
+
+    function hideThreeLayer() {
+      threeLayer.style.display = "none";
+      pauseAnimationPlayback();
+      if (modelRoot) {
+        modelRoot.visible = false;
+        renderThreeScene();
+      }
+    }
+
+    function renderThreeScene() {
+      if (!renderer || !scene || !camera) return;
+      renderer.render(scene, camera);
+    }
+
+    function createCompositeCanvas() {
+      const output = document.createElement("canvas");
+      output.width = canvas.width;
+      output.height = canvas.height;
+
+      const outputContext = output.getContext("2d");
+      outputContext.drawImage(canvas, 0, 0, output.width, output.height);
+
+      if (renderer && fbxModel && threeLayer.style.display !== "none") {
+        renderThreeScene();
+        outputContext.drawImage(renderer.domElement, 0, 0, output.width, output.height);
+      }
+
+      return output;
+    }
+
+    function buildJson() {
+      const pointData = {};
+
+      for (const step of STEPS) {
+        const point = points[step.id];
+        pointData[step.id] = point
+          ? {
+              label: step.label,
+              boneName: step.boneName,
+              targetKind: step.targetKind || "start",
+              x: round(point.x),
+              y: round(point.y),
+              normalizedX: round(point.nx),
+              normalizedY: round(point.ny),
+            }
+          : null;
+      }
+
+      return {
+        imageName,
+        imageWidth: canvas.width,
+        imageHeight: canvas.height,
+        fbxName: fbxSourceName,
+        usingDefaultFbx: fbxSourceUrl === MODEL_URL,
+        playFbxAnimation: playAnimationInput.checked,
+        completed: isComplete(),
+        labelingResolved: isLabelingDone(),
+        skipped: [...skipped],
+        points: pointData,
+        fitting: lastFitResult,
+        connections: CONNECTIONS.map(([from, to]) => ({
+          from,
+          to,
+          fromBoneName: stepById(from)?.boneName || from,
+          toBoneName: stepById(to)?.boneName || to,
+          fromTargetKind: stepById(from)?.targetKind || "start",
+          toTargetKind: stepById(to)?.targetKind || "start",
+        })),
+      };
+    }
+
+    function stepById(id) {
+      return STEPS.find((step) => step.id === id);
+    }
+
+    function findNextMissingIndex(startIndex = 0) {
+      for (let offset = 0; offset < STEPS.length; offset++) {
+        const index = (startIndex + offset) % STEPS.length;
+        const id = STEPS[index].id;
+        if (!points[id] && !skipped.has(id)) return index;
+      }
+
+      return STEPS.length - 1;
+    }
+
+    function isComplete() {
+      return STEPS.every((step) => Boolean(points[step.id]));
+    }
+
+    function isLabelingDone() {
+      return STEPS.every((step) => Boolean(points[step.id]) || skipped.has(step.id));
+    }
+
+    function pointRadius() {
+      return Math.max(5, Math.min(9, canvas.width / 180));
+    }
+
+    function lineWidth() {
+      return Math.max(1.5, Math.min(3, canvas.width / 700));
+    }
+
+    function makeFileName(prefix, extension) {
+      const safeName = (imageName || "image")
+        .replace(/\.[^.]+$/, "")
+        .replace(/[^\u4e00-\u9fa5a-z0-9_-]+/gi, "-")
+        .replace(/^-+|-+$/g, "")
+        || "image";
+      return `${prefix}-${safeName}.${extension}`;
+    }
+
+    function round(value) {
+      return Number(value.toFixed(4));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+  </script>
+</body>
+</html>

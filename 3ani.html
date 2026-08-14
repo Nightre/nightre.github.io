@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>3DAni</title>
+  <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      color-scheme: light;
+      --text: #151515;
+      --muted: #5e5e5e;
+      --line: #c8c8c8;
+      --line-strong: #8f8f8f;
+      --panel: #ffffff;
+      --surface: #f6f6f6;
+      --stage: #e4e6e8;
+      --active: #111111;
+      --disabled: #a7a7a7;
+    }
+
+    body {
+      min-width: 320px;
+      height: 100vh;
+      margin: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      overflow: hidden;
+      color: var(--text);
+      background: var(--panel);
+      font-family: Arial, "Microsoft YaHei", "PingFang SC", sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    button,
+    input {
+      font: inherit;
+      color: inherit;
+    }
+
+    button,
+    .file-button {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    button:not(:disabled),
+    .file-control {
+      cursor: pointer;
+    }
+
+    button:not(:disabled):hover,
+    .file-control:hover .file-button {
+      background: var(--surface);
+    }
+
+    button:disabled,
+    input:disabled + span,
+    .toggle:has(input:disabled) {
+      color: var(--disabled);
+      cursor: default;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    .file-control:focus-within .file-button {
+      outline: 1px solid var(--active);
+      outline-offset: 2px;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .brand {
+      font-size: 15px;
+      font-weight: 700;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 26px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .brand-name {
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .toolbar {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      overflow-x: auto;
+    }
+
+    .file-control {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+    }
+
+    .toggle span {
+      white-space: nowrap;
+    }
+
+    .file-input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    fieldset {
+      min-inline-size: 0;
+      height: 32px;
+      margin: 0;
+      padding: 3px 8px 4px;
+      border: 1px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    legend {
+      padding: 0 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    fieldset label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      accent-color: var(--active);
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 32px;
+    }
+
+    .app-main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      overflow: hidden;
+    }
+
+    .stage-shell {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) auto;
+      background: var(--stage);
+    }
+
+    .stage {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .empty-state {
+      width: min(420px, calc(100% - 24px));
+      padding: 30px 34px;
+      height: auto;
+      text-align: center;
+      cursor: pointer;
+      border-color: var(--line);
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    .empty-state strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .viewport {
+      position: relative;
+      display: none;
+      width: 74%;
+      max-width: 100%;
+      flex: 0 0 auto;
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+    }
+
+    .viewport > img,
+    .viewport > canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .viewport > img {
+      z-index: 1;
+      object-fit: fill;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .viewport > canvas {
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    #boxOverlay {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: none;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .stage-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      min-height: 34px;
+      padding: 6px 10px;
+      border-top: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .credit {
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .sidebar {
+      min-width: 0;
+      overflow-y: auto;
+      border-left: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .sidebar-image {
+      display: block;
+      width: 100%;
+      height: 200px;
+      padding: 18px 20px;
+      object-fit: contain;
+      object-position: center;
+      margin-bottom: 18px;
+    }
+
+    .side-section {
+      padding: 0 20px;
+      margin-bottom: 24px;
+    }
+
+    .side-section h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .source-name {
+      margin: 0 0 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .source-status {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .control-row > span:first-child {
+      flex: 0 0 42px;
+    }
+
+    .control-row > span:last-child {
+      flex: 0 0 42px;
+      color: var(--text);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .control-row input[type="range"] {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .export-button {
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    .export-status {
+      margin: 8px 0 0;
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input[type="range"] {
+      appearance: none;
+      height: 18px;
+      background: transparent;
+      accent-color: var(--active);
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 2px;
+      background: var(--line-strong);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 10px;
+      height: 18px;
+      margin-top: -8px;
+      border: 1px solid var(--active);
+      background: var(--active);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 2px;
+      background: var(--line-strong);
+      border: 0;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 10px;
+      height: 18px;
+      border: 1px solid var(--active);
+      background: var(--active);
+    }
+
+    @media (max-width: 900px) {
+      .app-main {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-shell {
+        min-height: 62vh;
+      }
+
+      .viewport {
+        width: 84%;
+      }
+
+      .sidebar {
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .stage {
+        padding: 8px;
+      }
+
+      .viewport {
+        width: 90%;
+      }
+
+      .stage-status {
+        align-items: center;
+        flex-direction: row;
+      }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand" aria-label="3DAni">
+      <img class="brand-logo" src="./logo.svg" alt="" aria-hidden="true" />
+      <span class="brand-name">3DAni</span>
+    </div>
+    <div class="toolbar" aria-label="Toolbar">
+      <label class="file-control">
+        <span class="file-button">Choose Reference Image</span>
+        <input id="imageInput" class="file-input" type="file" accept="image/*" />
+      </label>
+      <label class="file-control">
+        <span class="file-button">Choose Mixamo FBX</span>
+        <input id="fbxInput" class="file-input" type="file" accept=".fbx,model/fbx,application/octet-stream" />
+      </label>
+      <fieldset>
+        <legend>View</legend>
+        <label><input id="viewOrthoInput" name="viewMode" type="radio" checked disabled /> Orthographic</label>
+        <label><input id="viewPerspectiveInput" name="viewMode" type="radio" disabled /> Perspective</label>
+      </fieldset>
+      <button id="resetButton" type="button" disabled title="Redraw vanishing points">
+        <span>Redraw VP</span>
+      </button>
+      <button id="flipZButton" type="button" disabled aria-pressed="false" title="Flip front and back">
+        <span>Front/Back</span>
+      </button>
+      <button id="flipXButton" type="button" disabled aria-pressed="false" title="Flip left and right">
+        <span>Left/Right</span>
+      </button>
+      <button id="flipYButton" type="button" disabled aria-pressed="false" title="Flip up and down">
+        <span>Up/Down</span>
+      </button>
+      <label class="toggle">
+        <input id="modelInput" type="checkbox" disabled />
+        <span>Show Model</span>
+      </label>
+      <label class="toggle">
+        <input id="playInput" type="checkbox" checked disabled />
+        <span>Play Animation</span>
+      </label>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="stage-shell">
+      <div id="stage" class="stage">
+        <button id="emptyState" class="empty-state" type="button">
+          <strong>Choose a reference image</strong>
+        </button>
+        <div id="viewport" class="viewport">
+          <img id="referenceImage" alt="Reference image" draggable="false" />
+          <canvas id="threeCanvas"></canvas>
+        </div>
+        <svg id="boxOverlay" aria-label="Vanishing point and model controls"></svg>
+      </div>
+      <div class="stage-status">
+        <span class="credit">2026 By Nights. Made for Ghoul. 0.0.1</span>
+        <span id="mainStatus" hidden>Loading default Walking.fbx...</span>
+        <span id="dragStatus" hidden>Click the X vanishing point</span>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <img class="sidebar-image" src="./t.svg" alt="" />
+
+      <section class="side-section">
+        <h2>Assets</h2>
+        <p id="imageName" class="source-name">No image selected</p>
+        <p id="fbxName" class="source-name">Walking.fbx</p>
+        <p id="modelStatus" class="source-status">Reading model bounds.</p>
+      </section>
+
+      <section class="side-section">
+        <h2>Model Display</h2>
+        <label class="control-row">
+          <span>Opacity</span>
+          <input id="opacityInput" type="range" min="20" max="100" value="86" />
+          <span id="opacityValue">86%</span>
+        </label>
+      </section>
+
+      <section class="side-section">
+        <h2>Model Size</h2>
+        <label class="control-row">
+          <span>Scale</span>
+          <input id="scaleInput" type="range" min="10" max="400" step="1" value="100" />
+          <span id="scaleValue">100%</span>
+        </label>
+      </section>
+
+      <section class="side-section">
+        <h2>Export</h2>
+        <button id="exportGifButton" class="export-button" type="button" disabled>
+          <span>Export GIF</span>
+        </button>
+        <p id="exportStatus" class="export-status"></p>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="./vp-editor.js"></script>
+</body>
+</html>
